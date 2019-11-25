@@ -1,0 +1,98 @@
+{% comment %}
+  Combine Products v1.5
+	Coded By IShopifyExpert - Aaliyan Gul
+  Replace and paste all code on product-form.liquid in Icon Theme
+{% endcomment %}
+
+{% assign productVariants = product.variants %}
+{% assign productOptionNames = product.options | json %}
+{% capture productListDynamic %}{% for i in (1..5) %}{{product.url}}-{{i}}{% if forloop.last %}{% else %},{% endif %}{% endfor %}{% endcapture %}
+{% assign productList = productListDynamic | remove: '/products/' | replace:' ' | split:',' %}
+{% for productListHandle in productList %}{% assign productListItem = all_products[productListHandle] %}{% assign productListOption = productListItem.options | json %}{% unless productListOption == productOptionNames %}{% continue %}{% endunless %}{% assign productVariants = productVariants | concat:productListItem.variants %}{% endfor %}
+{% form 'product', product, data-product-form:product_form_config %}
+
+  <script class="product-json" type="application/json">
+     {{ product | json | split: '"variants":[' | first }}"variants":{{ productVariants | json }},"images":{{ product | json | split: '],"images":' | last }}
+  </script>
+
+  <!-- collection breadcrumbs -->
+  {% if collection %}
+    <div class="desktop-1 right mobile-hide">
+      {% if collection.previous_product %}
+        {{ '<i class="fa fa-angle-left" aria-hidden="true"></i>' | link_to: collection.previous_product }}
+      {% endif %}
+        &nbsp;
+        {% if collection.next_product %}
+        {{ '<i class="fa fa-angle-right" aria-hidden="true"></i>' | link_to: collection.next_product }}
+      {% endif %}
+    </div>
+  {% endif %}
+
+  <div class="product-description">
+
+    {% if section.settings.show_vendor %}
+      <h3>{{ 'products.product.designer' | t }}: {{ product.vendor }}</h3>
+      <div class="clear"></div>
+    {% endif %}
+
+    {%- if settings.show_multiple_currencies -%}
+      {% assign price = current_variant.price | money_with_currency %}
+      {% assign compare_price = current_variant.compare_at_price | money_with_currency %}
+    {%- else -%}
+      {% assign price = current_variant.price | money %}
+      {% assign compare_price = current_variant.compare_at_price | money %}
+    {%- endif -%}
+    <div id="product-price">
+      <span class="product-price" itemprop="price">
+        <span class="money">{{ price }}</span>
+      </span>
+      {% if current_variant.compare_at_price > current_variant.price %}
+        <span class="was">
+          <span class="money">{{ compare_price }}</span>
+        </span>
+      {% endif %}
+    </div><div class="clear"></div>
+
+    {% if section.settings.product_note != blank %}
+      <p class="product-note">
+        {{ section.settings.product_note | escape }}
+      </p><div class="clear"></div>
+    {% endif %}
+
+    {%- if section.setting.show_sku -%}
+      <p class="sku">
+        {{ current_variant.sku }}
+      </p><div class="clear"></div>
+    {%- endif -%}
+    
+    <select id="product-select-{{ product.id }}" name="id" {% if product.variants.size == 1 %}style="display: none;"{% endif %}>
+      {% for variant in productVariants %}
+        <option value="{{ variant.id }}" {% if variant == current_variant %}selected="selected"{% endif %}>
+          {{ variant.title }} - {{ variant.price | money }}
+        </option>
+      {% endfor %}
+    </select>
+
+    {%- if section.settings.show_quantity_selector -%}
+      <div class="product-qty selector-wrapper">
+        <label for="quantity">{{ 'products.product.quantity' | t }}</label>
+        <input min="1" type="number" class="quantity" name="quantity" value="1" />
+      </div>
+    {%- endif -%}
+
+    {% if current_variant.available %}
+      <div class="product-add">
+        <input id="AddToCart" type="submit" name="button" class="add{% if section.settings.show_payment_button %} secondary-button{% endif %}" value="{{ 'products.product.add_to_cart' | t }}" />
+      </div>
+    {% else %}
+      <div class="product-add">
+        <input id="AddToCart" type="submit" name="button" class="add{% if section.settings.show_payment_button %} secondary-button{% endif %}" value="{{ 'products.product.sold_out' | t }}" />
+      </div>
+    {% endif %}
+
+    {% if section.settings.show_payment_button %}
+    {{ form | payment_button }}
+    {% endif %}
+
+  </div>
+{% endform %}
