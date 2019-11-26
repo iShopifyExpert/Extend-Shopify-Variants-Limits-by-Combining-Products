@@ -1,11 +1,12 @@
 {% assign product_image_box_ratio_max = 0 %}
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           {% include settingElements %}                                                                                                                                                                                                                                         
-{% for image in product.images %}
-  {% assign image_box_ratio = image.height | append: ".0" | times: 1 | divided_by: image.width | times: 100 %}
-
-  {% if image_box_ratio > product_image_box_ratio_max %}
-    {% assign product_image_box_ratio_max = image_box_ratio %}
-  {% endif %}
+{% assign productVariants = product.variants %}
+{% assign productOptionNames = product.options | json %}
+{% capture productListDynamic %}{% for i in (1..5) %}{{product.url}}-{{i}}{% if forloop.last %}{% else %},{% endif %}{% endfor %}{% endcapture %}
+{% assign productList = productListDynamic | remove: '/products/' | replace:' ' | split:',' %}
+{% for productListHandle in productList %}
+{% assign productListItem = all_products[productListHandle] %}
+{% assign productListOption = productListItem.options | json %}{% unless productListOption == productOptionNames %}{% continue %}{% endunless %}
+{% assign productVariants = productVariants | concat:productListItem.variants %}
 {% endfor %}
 
 {% capture producttotalImage %}
@@ -16,8 +17,14 @@
 {% endfor %}
 {% endcapture %}
 
-{% assign product_image_box_ratio_max = product_image_box_ratio_max | append: "%" %}
+{% for image in product.images %}
+  {% assign image_box_ratio = image.height | append: ".0" | times: 1 | divided_by: image.width | times: 100 %}
+  {% if image_box_ratio > product_image_box_ratio_max %}
+    {% assign product_image_box_ratio_max = image_box_ratio %}
+  {% endif %}
+{% endfor %}
 
+{% assign product_image_box_ratio_max = product_image_box_ratio_max | append: "%" %}
 {% assign featured_image = current_variant.image | default: product.featured_image %}
 
 <div class="product-main-images {% if producttotalImage.size > 1 %}desktop-10{% else %}desktop-12{% endif %}">
